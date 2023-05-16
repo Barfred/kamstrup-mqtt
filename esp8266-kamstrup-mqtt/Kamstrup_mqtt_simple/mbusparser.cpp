@@ -1,5 +1,7 @@
 #include "mbusparser.h"
 #include <cassert>
+//#include <iostream>
+
 
 size_t VectorView::find(const std::vector<uint8_t>& needle) const
 {
@@ -198,6 +200,7 @@ bool MbusStreamParser::pushData(uint8_t data)
   }
   switch (m_parseState) {
   case LOOKING_FOR_START:
+    //std::cout << "DEBUG: m_parseState=LOOKING_FOR_START" << ", data=" << std::hex << (unsigned)data << std::dec << std::endl;
     m_buf[m_position++] = data;
     if (data == 0x7E) {
       // std::cout << "Found frame start. Pos=" << m_position << std::endl;
@@ -205,6 +208,7 @@ bool MbusStreamParser::pushData(uint8_t data)
     }
     break;
   case LOOKING_FOR_FORMAT_TYPE:
+    //std::cout << "DEBUG: m_parseState=LOOKING_FOR_FORMAT_TYPE" << std::endl;
     m_buf[m_position++] = data;
     assert(m_position > 1);
     if ((data & 0xF0) == 0xA0) {
@@ -225,6 +229,7 @@ bool MbusStreamParser::pushData(uint8_t data)
     }
     break;
   case LOOKING_FOR_SIZE:
+    //std::cout << "DEBUG: m_parseState=LOOKING_FOR_SIZE" << std::endl;
     assert(m_position > 0);
     // Move start of frame to start of buffer
     m_buf[0] = 0x7E;
@@ -236,6 +241,7 @@ bool MbusStreamParser::pushData(uint8_t data)
     m_parseState = LOOKING_FOR_END;
     break;
   case LOOKING_FOR_END:
+    //std::cout << "DEBUG: m_parseState=LOOKING_FOR_END" << std::endl;
     m_buf[m_position++] = data;
     if (m_position == (m_messageSize+2)) {
       if (data == 0x7E) {
@@ -252,6 +258,7 @@ bool MbusStreamParser::pushData(uint8_t data)
     }
     break;
   }
+  // std::cout << "DEBUG: Returning false. Pos=" << m_position << ", Message size is: " << m_messageSize << std::endl;
   return false;
 }
 

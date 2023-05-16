@@ -24,7 +24,7 @@ PubSubClient client(espClient);
 void setup() {
   //DEBUG_BEGIN
   //DEBUG_PRINTLN("")
-  Serial.begin(115200);
+  Serial.begin(2400);
   Serial.println(" I can print something");
 
   WiFi.begin(ssid, password);
@@ -40,10 +40,12 @@ void setup() {
   while (!client.connected()) {
     Serial.println("Connecting to MQTT...");
 
-    if (client.connect(mqttClientID)) { //, mqttUser, mqttPassword )) {
+    if (client.connect(mqttClientID, mqttUser, mqttPassword )) {
 
-      Serial.println("connected");
-
+      //Serial.println("connected");
+      DEBUG_PRINTLN("Connected to MQTT");
+      //sendmsg(String(mqtt_topic)+"/status","Connected to mqtt - hello world");
+      
     } else {
 
       Serial.print("failed with state ");
@@ -53,7 +55,9 @@ void setup() {
     }
   }
 
-  Serial.begin(2400, SERIAL_8N1);
+  delay(300);
+  //Serial.begin(2400, SERIAL_8N1);
+  delay(300);
   Serial.swap();
   hexStr2bArr(encryption_key, conf_key, sizeof(encryption_key));
   hexStr2bArr(authentication_key, conf_authkey, sizeof(authentication_key));
@@ -65,21 +69,29 @@ void loop() {
   while (Serial.available() > 0) {
     //Serial.println("test");
     //for(int i=0;i<sizeof(input);i++){
+    //DEBUG_PRINTLN("Client detected data on Serial");
     if (streamParser.pushData(Serial.read())) {
+      DEBUG_PRINTLN("Parser got data from Serial");
       //  if (streamParser.pushData(input[i])) {
       VectorView frame = streamParser.getFrame();
+      DEBUG_PRINTLN("Client got a frame");
+      
       if (streamParser.getContentType() == MbusStreamParser::COMPLETE_FRAME) {
-        DEBUG_PRINTLN("Frame complete");
+        DEBUG_PRINTLN("Frame is complete");
         if (!decrypt(frame))
         {
           DEBUG_PRINTLN("Decryption failed");
           return;
         }
+        DEBUG_PRINTLN("Decryption succeeded");
         MeterData md = parseMbusFrame(decryptedFrame);
         sendData(md);
+      } else {
+        DEBUG_PRINTLN("Frame is trash");
       }
     }
   }
+  // DEBUG_PRINTLN("Client loop");
   client.loop();
 }
 
